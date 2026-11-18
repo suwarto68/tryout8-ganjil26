@@ -1,0 +1,115 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net: Default-deny all paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedEmail() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isVerifiedEmail() && (
+        request.auth.token.email == 'ujiansmpn1wnry@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidTopicScores(m) {
+      return m is map &&
+        m.keys().hasAll(['pangkat', 'akar', 'baku', 'pythagoras', 'plsv']) &&
+        m.keys().hasOnly(['pangkat', 'akar', 'baku', 'pythagoras', 'plsv']) &&
+        m.pangkat is number && m.pangkat >= 0 && m.pangkat <= 100 &&
+        m.akar is number && m.akar >= 0 && m.akar <= 100 &&
+        m.baku is number && m.baku >= 0 && m.baku <= 100 &&
+        m.pythagoras is number && m.pythagoras >= 0 && m.pythagoras <= 100 &&
+        m.plsv is number && m.plsv >= 0 && m.plsv <= 100;
+    }
+
+    function isValidCompetencyScores(m) {
+      return m is map &&
+        m.keys().hasAll(['memahami', 'mengaplikasikan', 'menalar']) &&
+        m.keys().hasOnly(['memahami', 'mengaplikasikan', 'menalar']) &&
+        m.memahami is number && m.memahami >= 0 && m.memahami <= 100 &&
+        m.mengaplikasikan is number && m.mengaplikasikan >= 0 && m.mengaplikasikan <= 100 &&
+        m.menalar is number && m.menalar >= 0 && m.menalar <= 100;
+    }
+
+    function isValidTypeScores(m) {
+      return m is map &&
+        m.keys().hasAll(['pg', 'mcma', 'bs']) &&
+        m.keys().hasOnly(['pg', 'mcma', 'bs']) &&
+        m.pg is number && m.pg >= 0 && m.pg <= 17 &&
+        m.mcma is number && m.mcma >= 0 && m.mcma <= 8 &&
+        m.bs is number && m.bs >= 0 && m.bs <= 10;
+    }
+
+    function isValidSubmission(data) {
+      return data.keys().hasAll([
+          'studentName', 'className', 'absentNumber', 'score',
+          'correctCount', 'totalQuestions', 'adaptiveTier', 'durationSeconds',
+          'topicScores', 'competencyScores', 'typeScores', 'submittedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'studentName', 'className', 'absentNumber', 'score',
+          'correctCount', 'totalQuestions', 'adaptiveTier', 'durationSeconds',
+          'topicScores', 'competencyScores', 'typeScores', 'submittedAt'
+        ]) &&
+        data.studentName is string && data.studentName.size() >= 2 && data.studentName.size() <= 80 &&
+        data.className in ['8A', '8B'] &&
+        data.absentNumber is string && data.absentNumber.size() <= 10 &&
+        data.score is number && data.score >= 0 && data.score <= 100 &&
+        data.correctCount is number && data.correctCount >= 0 && data.correctCount <= 35 &&
+        data.totalQuestions == 35 &&
+        data.adaptiveTier in ['Dasar', 'Menengah', 'Mahir'] &&
+        data.durationSeconds is number && data.durationSeconds >= 0 && data.durationSeconds <= 14400 &&
+        isValidTopicScores(data.topicScores) &&
+        isValidCompetencyScores(data.competencyScores) &&
+        isValidTypeScores(data.typeScores) &&
+        data.submittedAt == request.time;
+    }
+
+    function isValidAdminUser(data) {
+      return data.keys().hasAll(['email', 'name', 'role']) &&
+        data.keys().hasOnly(['email', 'name', 'role']) &&
+        data.email is string && data.email.size() >= 5 && data.email.size() <= 120 &&
+        data.name is string && data.name.size() >= 2 && data.name.size() <= 80 &&
+        data.role == 'teacher';
+    }
+
+    // Koleksi hasil kuis siswa
+    match /quiz_submissions/{submissionId} {
+      allow get: if isValidId(submissionId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(submissionId) && isValidSubmission(incoming());
+      allow update: if false;
+      allow delete: if isValidId(submissionId) && isAdmin();
+    }
+
+    // Koleksi daftar guru terotorisasi
+    match /admins/{userId} {
+      allow get: if isValidId(userId) && (isAdmin() || (isSignedIn() && request.auth.uid == userId));
+      allow list: if isAdmin();
+      allow create, update, delete: if isValidId(userId) && isAdmin() && isValidAdminUser(incoming());
+    }
+
+    // Uji konektivitas startup
+    match /test/connection {
+      allow get: if true;
+    }
+  }
+}

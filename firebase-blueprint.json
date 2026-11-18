@@ -1,0 +1,113 @@
+{
+  "entities": {
+    "QuizSubmission": {
+      "title": "QuizSubmission",
+      "description": "Rekap hasil Try Out SAS Matematika Kelas 8 siswa SMPN 1 Wanaraya yang disinkronkan secara real-time.",
+      "type": "object",
+      "properties": {
+        "studentName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80,
+          "description": "Nama lengkap siswa peserta Try Out."
+        },
+        "className": {
+          "type": "string",
+          "enum": ["8A", "8B"],
+          "description": "Kelas siswa (8A atau 8B)."
+        },
+        "absentNumber": {
+          "type": "string",
+          "maxLength": 10,
+          "description": "Nomor absen siswa (opsional)."
+        },
+        "score": {
+          "type": "number",
+          "description": "Nilai akhir skala 0 sampai 100."
+        },
+        "correctCount": {
+          "type": "number",
+          "description": "Jumlah soal yang dijawab benar penuh."
+        },
+        "totalQuestions": {
+          "type": "number",
+          "description": "Total jumlah soal (35)."
+        },
+        "adaptiveTier": {
+          "type": "string",
+          "enum": ["Dasar", "Menengah", "Mahir"],
+          "description": "Tingkat adaptif akhir siswa."
+        },
+        "durationSeconds": {
+          "type": "number",
+          "description": "Durasi pengerjaan dalam detik."
+        },
+        "topicScores": {
+          "type": "object",
+          "description": "Persentase capaian per 5 materi pokok."
+        },
+        "competencyScores": {
+          "type": "object",
+          "description": "Persentase capaian per tingkat kompetensi (Memahami, Mengaplikasikan, Menalar)."
+        },
+        "typeScores": {
+          "type": "object",
+          "description": "Rincian skor per bentuk soal (PG, MCMA, BS)."
+        },
+        "submittedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Waktu pengumpulan server timestamp."
+        }
+      },
+      "required": [
+        "studentName",
+        "className",
+        "absentNumber",
+        "score",
+        "correctCount",
+        "totalQuestions",
+        "adaptiveTier",
+        "durationSeconds",
+        "topicScores",
+        "competencyScores",
+        "typeScores",
+        "submittedAt"
+      ]
+    },
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Daftar UID guru matematika yang memiliki akses penuh ke Dasbor Guru.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "role": {
+          "type": "string",
+          "enum": ["teacher"]
+        }
+      },
+      "required": ["email", "name", "role"]
+    }
+  },
+  "firestore": {
+    "/quiz_submissions/{submissionId}": {
+      "schema": { "$ref": "#/entities/QuizSubmission" },
+      "description": "Koleksi hasil Try Out SAS siswa kelas 8A dan 8B."
+    },
+    "/admins/{userId}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "Koleksi UID guru terotorisasi."
+    },
+    "/test/{docId}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "Dokumen uji koneksi Firestore saat startup."
+    }
+  }
+}

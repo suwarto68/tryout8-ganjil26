@@ -1,0 +1,6 @@
+{
+  "name": "Try Out SAS Matematika Kelas 8 — SMPN 1 Wanaraya",
+  "description": "Aplikasi kuis interaktif adaptif Matematika SMP Kelas 8 (8A & 8B) persiapan SAS dengan stimulus literasi Wanaraya, grafik & infografis, audio narasi interaktif, dan dasbor guru real-time.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
